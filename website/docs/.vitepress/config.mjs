@@ -50,8 +50,7 @@ export default defineConfig({
         text: '数据',
         items: [
           { text: '注册与 access', link: '/access/' },
-          { text: 'MySQL 与达梦', link: '/dialect/' },
-          { text: '发布到 Central', link: '/release' }
+          { text: 'MySQL 与达梦', link: '/dialect/' }
         ]
       }
     ],

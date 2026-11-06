@@ -14,10 +14,6 @@
     <name>queryengine-demo</name>
     <description>Embedding sample and contract tests. Not a web application.</description>
 
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.github.awenjackson</groupId>

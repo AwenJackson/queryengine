@@ -14,10 +14,6 @@
     <name>queryengine-boot</name>
     <description>Runnable Spring Boot demo. Default profile uses in-memory H2 in MySQL mode.</description>
 
-    <properties>
-        <maven.deploy.skip>true</maven.deploy.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.github.awenjackson</groupId>
