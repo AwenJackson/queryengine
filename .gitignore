@@ -1,0 +1,16 @@
+target/
+*.class
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/
+*.log
+.DS_Store
+node_modules/
+website/.vitepress/dist/
+website/.vitepress/cache/
+website/docs/.vitepress/dist/
+website/docs/.vitepress/cache/
+artifacts/*.zip

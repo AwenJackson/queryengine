@@ -1,0 +1,116 @@
+-- 达梦 DM8。数据与 scripts/schema-mysql.sql 相同。
+-- MySQL 用反引号小写表名（`user`）。达梦默认把未加引号的名字折成大写，
+-- DamengDialect 也会把请求里的列名转成大写再加双引号，因此这里建成 "DEMO"."USER"、"USERID"、"USER_ID"。
+-- 不要把 schema-mysql.sql 拿到 disql 里执行。
+-- 若模式 DEMO 已存在，跳过 CREATE SCHEMA，从 DROP 开始。
+
+CREATE SCHEMA "DEMO";
+
+DROP TABLE IF EXISTS "DEMO"."ACCESS";
+DROP TABLE IF EXISTS "DEMO"."BOOK_MENU_TIP";
+DROP TABLE IF EXISTS "DEMO"."BOOK_MENU";
+DROP TABLE IF EXISTS "DEMO"."BOOK";
+DROP TABLE IF EXISTS "DEMO"."TYPE";
+DROP TABLE IF EXISTS "DEMO"."COMMENT";
+DROP TABLE IF EXISTS "DEMO"."MOMENT";
+DROP TABLE IF EXISTS "DEMO"."USER";
+
+CREATE TABLE "DEMO"."USER" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "NAME" VARCHAR(64) NOT NULL,
+  "SEX" INT,
+  "TAG" VARCHAR(64)
+);
+
+CREATE TABLE "DEMO"."MOMENT" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "USERID" BIGINT,
+  "CONTENT" VARCHAR(255)
+);
+
+CREATE TABLE "DEMO"."COMMENT" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "MOMENTID" BIGINT,
+  "USERID" BIGINT,
+  "CONTENT" VARCHAR(255)
+);
+
+CREATE TABLE "DEMO"."BOOK" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "USER_ID" BIGINT,
+  "BOOK_NAME" VARCHAR(255),
+  "BOOK_DESC" VARCHAR(255),
+  "TYPE_ID" BIGINT
+);
+
+CREATE TABLE "DEMO"."BOOK_MENU" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "USER_ID" BIGINT,
+  "MENU_NAME" VARCHAR(255),
+  "BOOK_ID" BIGINT
+);
+
+CREATE TABLE "DEMO"."BOOK_MENU_TIP" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "BOOK_MENU_ID" BIGINT,
+  "TIP_NAME" VARCHAR(255)
+);
+
+CREATE TABLE "DEMO"."TYPE" (
+  "ID" BIGINT NOT NULL PRIMARY KEY,
+  "USER_ID" BIGINT,
+  "TYPE_NAME" VARCHAR(255),
+  "COMMENT_ID" BIGINT
+);
+
+INSERT INTO "DEMO"."USER" ("ID", "NAME", "SEX", "TAG") VALUES
+ (10001, 'Blank', 0, NULL),
+ (38710, 'Tommy', 0, 'student'),
+ (70793, 'Lily', 1, 'teacher'),
+ (82001, 'Tom', 0, 'student');
+
+INSERT INTO "DEMO"."MOMENT" ("ID", "USERID", "CONTENT") VALUES
+ (1, 38710, 'hello'),
+ (2, 38710, 'world'),
+ (3, 82001, 'other');
+
+INSERT INTO "DEMO"."COMMENT" ("ID", "MOMENTID", "USERID", "CONTENT") VALUES
+ (10, 1, 82001, 'nice'),
+ (11, 1, 70793, 'good'),
+ (12, 2, 82001, 'ok'),
+ (13, 1, 38710, 'aoisa');
+
+INSERT INTO "DEMO"."BOOK" ("ID", "USER_ID", "BOOK_NAME", "BOOK_DESC", "TYPE_ID") VALUES
+ (1, 70793, '一千零一夜', '一千零一夜的描述', 3),
+ (2, 38710, '安徒生童话', '安徒生童话的描述', 1);
+
+INSERT INTO "DEMO"."BOOK_MENU" ("ID", "USER_ID", "MENU_NAME", "BOOK_ID") VALUES
+ (1, 38710, '章节一', 2),
+ (2, 38710, '章节二', 2),
+ (3, 70793, '章节一', 1);
+
+INSERT INTO "DEMO"."BOOK_MENU_TIP" ("ID", "BOOK_MENU_ID", "TIP_NAME") VALUES
+ (1, 1, '章节一提示'),
+ (2, 2, '章节二提示');
+
+INSERT INTO "DEMO"."TYPE" ("ID", "USER_ID", "TYPE_NAME", "COMMENT_ID") VALUES
+ (1, 38710, '类型名称', 13),
+ (2, 38710, '新增', 13),
+ (3, 70793, '删除', 11);
+
+CREATE TABLE "DEMO"."ACCESS" (
+  "ID" BIGINT IDENTITY PRIMARY KEY,
+  "NAME" VARCHAR(64) NOT NULL,
+  "ALIAS" VARCHAR(64),
+  "SCHEMA_NAME" VARCHAR(64),
+  "ENABLED" INT NOT NULL
+);
+
+INSERT INTO "DEMO"."ACCESS" ("NAME", "ALIAS", "SCHEMA_NAME", "ENABLED") VALUES
+ ('User', 'user', NULL, 1),
+ ('Moment', 'moment', NULL, 1),
+ ('Comment', 'comment', NULL, 1),
+ ('Book', 'book', NULL, 1),
+ ('Book_menu', 'book_menu', NULL, 1),
+ ('Book_menu_tip', 'book_menu_tip', NULL, 1),
+ ('Type', 'type', NULL, 1);

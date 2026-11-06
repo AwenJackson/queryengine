@@ -1,0 +1,15 @@
+# 先导入仓库根目录的 scripts/schema-mysql.sql，再启动：
+# mvn -pl queryengine-boot -am spring-boot:run -Dspring-boot.run.profiles=mysql
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/demo?characterEncoding=UTF-8&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:root}
+  sql:
+    init:
+      mode: never
+
+queryengine:
+  dialect: mysql
+  schema: demo

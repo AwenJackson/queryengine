@@ -1,0 +1,16 @@
+# 先导入 scripts/schema-dameng.sql。驱动不在本模块里，需自行加入 DmJdbcDriver18 后再启动：
+# mvn -pl queryengine-boot -am spring-boot:run -Dspring-boot.run.profiles=dameng
+spring:
+  datasource:
+    url: jdbc:dm://127.0.0.1:5236
+    driver-class-name: dm.jdbc.driver.DmDriver
+    username: ${DAMENG_USER:SYSDBA}
+    password: ${DAMENG_PASSWORD:SYSDBA}
+  sql:
+    init:
+      mode: never
+
+queryengine:
+  dialect: dameng
+  schema: DEMO
+  dameng-uppercase-identifiers: true

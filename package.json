@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "scripts": {
+    "docs:dev": "npm --prefix website run docs:dev",
+    "docs:build": "npm --prefix website run docs:build",
+    "docs:preview": "npm --prefix website run docs:preview"
+  }
+}
