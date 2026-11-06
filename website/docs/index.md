@@ -10,8 +10,8 @@ NestQL（Nested Query Language，嵌套查询语言）是 QueryEngine 自己的 
 
 | 方式 | 入口 |
 | --- | --- |
-| NestQL | `POST /get`，别名 `POST /nestql/get` |
-| RESTful | `GET /rest/User/38710` |
-| GraphQL | `POST /graphql`，主键变量写 `Long!`，不要写 `ID!` 或 `Int!` |
+| NestQL | [`POST /get`](./nestql/index.md)，别名 `POST /nestql/get` |
+| RESTful | [`GET /rest/User/38710`](./http/rest.md) |
+| GraphQL | [`POST /graphql`](./http/graphql.md)。列参数是自定义标量 `Long` 与 `String` |
 
-下一步看 [快速开始](./guide/quick-start.md)。
+运算符、分页、引用和写入写在 [NestQL 语法](./nestql/operators.md)。下一步看 [快速开始](./guide/quick-start.md)。
