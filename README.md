@@ -6,7 +6,7 @@ NestQL（Nested Query Language，嵌套查询语言）是引擎自己的 JSON �
 
 核心库没有登录会话。直接调用 `QueryEngine` 时走 NestQL，失败仍抛异常。HTTP 由 `queryengine-web` 提供。
 
-Maven 坐标 `io.github.awenjackson`，版本 `0.1.0`。依赖片段、BOM 和发布步骤见 [docs/embedding.md](docs/embedding.md)、[docs/releasing.md](docs/releasing.md)。扩展解析器、SQL 和授权见 [docs/extending.md](docs/extending.md)。文档站在 `website/`，`npm run docs:dev` 预览。
+Maven 坐标 `io.github.awenjackson`，版本 `0.1.0`。依赖片段和 BOM 见 [docs/embedding.md](docs/embedding.md)。扩展解析器、SQL 和授权见 [docs/extending.md](docs/extending.md)。文档站在 `website/`，`npm run docs:dev` 预览。
 
 ## 模块
 
@@ -125,4 +125,3 @@ mvn -pl queryengine-demo -Dtest=MySqlContainerTest test
 - [MySQL 与达梦](docs/dialects.md)
 - [可复制示例](docs/examples.md)
 - [扩展与覆盖](docs/extending.md)
-- [发布到 Maven Central](docs/releasing.md)

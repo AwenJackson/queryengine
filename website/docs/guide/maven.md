@@ -37,5 +37,3 @@ groupId `io.github.awenjackson`，版本 `0.1.0`。
   <artifactId>queryengine-dialect-mysql</artifactId>
 </dependency>
 ```
-
-`queryengine-boot` 和 `queryengine-demo` 不发布到 Central。发布步骤见 [发布到 Central](../release.md)。
