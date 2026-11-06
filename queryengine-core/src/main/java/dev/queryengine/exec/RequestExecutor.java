@@ -11,6 +11,7 @@ import dev.queryengine.exception.QueryExecutionException;
 import dev.queryengine.plan.Assignment;
 import dev.queryengine.plan.FieldParser;
 import dev.queryengine.plan.Op;
+import dev.queryengine.plan.JsonValues;
 import dev.queryengine.plan.PagePolicy;
 import dev.queryengine.plan.PlannedSql;
 import dev.queryengine.plan.Predicate;
@@ -35,6 +36,7 @@ import java.util.Set;
 
 /**
  * 按请求树执行单表语句。嵌套只受调用栈限制，没有协议级深度或条数拒绝。
+ * POST 的查询形态数组按插入树执行；PUT / DELETE 仍拒绝这种对象。
  */
 public final class RequestExecutor {
 
@@ -84,7 +86,10 @@ public final class RequestExecutor {
         ObjectNode root = mapper.createObjectNode();
         List<Child> original = childrenOf(request, ROOT_META);
         for (Child child : order(original)) {
-            root.set(child.key(), executeChild(method, child, root, RefContext.newStack(), callSchema, session));
+            ObjectNode holder = child.kind() == Kind.TABLE ? root : null;
+            root.set(child.key(), executeChild(
+                    method, child, root, RefContext.newStack(), callSchema, session, null, holder, child.key()
+            ));
         }
         return reorder(root, original);
     }
@@ -97,22 +102,38 @@ public final class RequestExecutor {
             String callSchema,
             SqlSession session
     ) {
+        return executeChild(method, child, root, items, callSchema, session, null, null, null);
+    }
+
+    private JsonNode executeChild(
+            Method method,
+            Child child,
+            ObjectNode root,
+            Deque<ObjectNode> items,
+            String callSchema,
+            SqlSession session,
+            ParentScope parent,
+            ObjectNode holder,
+            String holderKey
+    ) {
         boolean write = isWrite(method);
         return switch (child.kind()) {
             case TABLE -> write
-                    ? writeTable(method, child.key(), child.spec(), root, items, callSchema, session)
+                    ? writeTable(method, child.key(), child.spec(), root, items, callSchema, session, parent, holder, holderKey)
                     : readTable(method, child.key(), child.spec(), root, items, callSchema, session);
             case ARRAY -> {
-                if (write) {
+                if (write && method != Method.POST) {
                     throw new BadRequestException("写操作不接受查询形态的 " + child.key());
                 }
-                yield readArray(method, child.key(), child.spec(), root, items, callSchema, session);
+                yield write
+                        ? writeArray(method, child.key(), child.spec(), root, items, callSchema, session, parent)
+                        : readArray(method, child.key(), child.spec(), root, items, callSchema, session);
             }
             case BATCH -> {
                 if (!write) {
                     throw new BadRequestException(child.key() + " 在查询中必须是对象");
                 }
-                yield writeBatch(method, child, root, items, callSchema, session);
+                yield writeBatch(method, child, root, items, callSchema, session, parent);
             }
         };
     }
@@ -221,21 +242,96 @@ public final class RequestExecutor {
             ObjectNode root,
             Deque<ObjectNode> items,
             String callSchema,
-            SqlSession session
+            SqlSession session,
+            ParentScope parent,
+            ObjectNode holder,
+            String holderKey
     ) {
+        ColumnBody body = splitColumns(spec);
+        if (method != Method.POST && !body.nested().isEmpty()) {
+            throw new BadRequestException("只有 POST 支持嵌套写入: " + body.nested().get(0).key());
+        }
+        if (method == Method.POST) {
+            applyParentKey(table, body.columns(), parent);
+        }
         TableGrant grant = registry.require(table, method, callSchema);
-        TableRequest parsed = fields.parse(spec, method, path -> refs.resolve(path, new RefContext(root, items)), idColumn);
+        TableRequest parsed = fields.parse(
+                body.columns(),
+                method,
+                path -> refs.resolve(path, new RefContext(root, items)),
+                idColumn
+        );
         if (parsed.unresolved()) {
             throw new BadRequestException("引用赋值没有解析到值: " + table);
         }
         String schema = schemaOf(grant, callSchema);
         String physical = grant.physicalName();
-        return switch (method) {
+        ObjectNode out = switch (method) {
             case POST -> doInsert(schema, physical, parsed, session);
             case PUT -> doUpdate(schema, physical, parsed, session);
             case DELETE -> doDelete(schema, physical, parsed, session);
             default -> throw new IllegalStateException("不是写操作: " + method);
         };
+        if (holder != null && holderKey != null) {
+            holder.set(holderKey, out);
+        }
+        if (body.nested().isEmpty()) {
+            return out;
+        }
+        ObjectNode frame = mapper.createObjectNode();
+        frame.set(table, out);
+        items.addFirst(frame);
+        try {
+            ParentScope childParent = new ParentScope(table, idOf(out), true);
+            for (Child child : body.nested()) {
+                out.set(child.key(), executeChild(
+                        method, child, root, items, callSchema, session, childParent, null, null
+                ));
+            }
+        } finally {
+            items.removeFirst();
+        }
+        return out;
+    }
+
+    private JsonNode writeArray(
+            Method method,
+            String key,
+            JsonNode spec,
+            ObjectNode root,
+            Deque<ObjectNode> items,
+            String callSchema,
+            SqlSession session,
+            ParentScope parent
+    ) {
+        rejectInsertMeta(key, spec);
+        List<Child> original = childrenOf(spec, ARRAY_META);
+        List<Child> sorted = order(original);
+        Child main = sorted.stream()
+                .filter(child -> child.kind() == Kind.TABLE)
+                .findFirst()
+                .orElseThrow(() -> new BadRequestException(key + " 缺少主表"));
+        long tables = sorted.stream().filter(child -> child.kind() == Kind.TABLE).count();
+        ObjectNode row = writeTable(method, main.key(), main.spec(), root, items, callSchema, session, parent, null, null);
+        ObjectNode item = mapper.createObjectNode();
+        item.set(main.key(), row);
+        ParentScope childParent = new ParentScope(main.key(), idOf(row), tables == 1);
+        ArrayNode array = mapper.createArrayNode();
+        items.addFirst(item);
+        try {
+            for (Child child : sorted) {
+                if (child.key().equals(main.key())) {
+                    continue;
+                }
+                item.set(child.key(), executeChild(
+                        method, child, root, items, callSchema, session, childParent, null, null
+                ));
+            }
+        } finally {
+            items.removeFirst();
+        }
+        array.add(reorder(item, original));
+        return array;
     }
 
     private ArrayNode writeBatch(
@@ -244,7 +340,8 @@ public final class RequestExecutor {
             ObjectNode root,
             Deque<ObjectNode> items,
             String callSchema,
-            SqlSession session
+            SqlSession session,
+            ParentScope parent
     ) {
         String table = batchTable(child.key());
         registry.require(table, method, callSchema);
@@ -253,9 +350,77 @@ public final class RequestExecutor {
             if (!element.isObject()) {
                 throw new BadRequestException("批量写入的元素必须是对象");
             }
-            array.add(writeTable(method, table, element, root, items, callSchema, session));
+            array.add(writeTable(method, table, element, root, items, callSchema, session, parent, null, null));
         }
         return array;
+    }
+
+    private void applyParentKey(String childTable, ObjectNode columns, ParentScope parent) {
+        if (parent == null) {
+            return;
+        }
+        List<String> keys = new ArrayList<>();
+        columns.fieldNames().forEachRemaining(keys::add);
+        if (!parent.sole()) {
+            if (ChildForeignKey.assigned(parent.table(), keys)) {
+                return;
+            }
+            throw new BadRequestException("嵌套写入 " + childTable + " 有多个父表，请显式写出外键列或使用引用赋值");
+        }
+        String column = ChildForeignKey.choose(childTable, parent.table(), keys);
+        if (column == null) {
+            return;
+        }
+        if (parent.id() == null) {
+            throw new BadRequestException("无法回填外键 " + column + "，父行没有主键 " + idColumn);
+        }
+        columns.set(column, mapper.valueToTree(parent.id()));
+    }
+
+    private Object idOf(ObjectNode row) {
+        JsonNode node = row.get(idColumn);
+        if (node == null || node.isNull() || !node.isValueNode()) {
+            return null;
+        }
+        return JsonValues.scalar(node);
+    }
+
+    private ColumnBody splitColumns(JsonNode spec) {
+        if (spec == null || !spec.isObject()) {
+            throw new BadRequestException("表请求必须是 JSON 对象");
+        }
+        ObjectNode columns = mapper.createObjectNode();
+        List<Child> nested = new ArrayList<>();
+        spec.fields().forEachRemaining(field -> {
+            String key = field.getKey();
+            JsonNode value = field.getValue();
+            if (isNestedKey(key)) {
+                if (value.isArray()) {
+                    nested.add(new Child(Kind.BATCH, key, value));
+                    return;
+                }
+                if (value.isObject()) {
+                    nested.add(new Child(Kind.ARRAY, key, value));
+                    return;
+                }
+                throw new BadRequestException("嵌套写入 " + key + " 必须是数组或对象");
+            }
+            columns.set(key, value);
+        });
+        return new ColumnBody(columns, nested);
+    }
+
+    private static boolean isNestedKey(String key) {
+        return "[]".equals(key) || (key.endsWith("[]") && key.length() > 2);
+    }
+
+    private static void rejectInsertMeta(String key, JsonNode spec) {
+        for (String meta : List.of("page", "count", "query")) {
+            JsonNode node = spec.get(meta);
+            if (node != null && !node.isObject() && !node.isArray()) {
+                throw new BadRequestException("插入形态的 " + key + " 不接受 " + meta);
+            }
+        }
     }
 
     private ObjectNode doInsert(String schema, String table, TableRequest parsed, SqlSession session) {
@@ -515,5 +680,12 @@ public final class RequestExecutor {
     }
 
     private record Child(Kind kind, String key, JsonNode spec) {
+    }
+
+    /** 嵌套子行可见的父表。{@code sole} 为 false 时有多张父表，不能猜测外键列。 */
+    private record ParentScope(String table, Object id, boolean sole) {
+    }
+
+    private record ColumnBody(ObjectNode columns, List<Child> nested) {
     }
 }

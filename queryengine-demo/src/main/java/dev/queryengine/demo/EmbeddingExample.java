@@ -21,7 +21,7 @@ public final class EmbeddingExample {
                 .defaultPageSize(10)
                 .maxPageSize(100)
                 .queryTimeoutSeconds(5)
-                .registerTables("User", "Moment", "Comment", "Book", "Book_menu", "Type", "Node", "Todo")
+                .registerTables("User", "Moment", "Comment", "Book", "Book_menu", "Book_menu_tip", "Type", "Node", "Todo")
                 .build();
     }
 }
