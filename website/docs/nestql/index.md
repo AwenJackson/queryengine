@@ -49,8 +49,8 @@ curl -s -X POST http://127.0.0.1:8080/get \
 | 键 | 值 | 作用 |
 | --- | --- | --- |
 | `"User"` | `{ ... }` | 单表对象。查询最多一行；写入一行 |
-| `"[]"` 或 `"User[]"` | `{ "page", "count", "User": { ... } }` | 查询数组。元素是 `{ "User": { ...列 } }` |
-| `"Todo[]"` | `[ { ... }, { ... } ]` | 批量 POST / PUT / DELETE |
+| `"[]"` 或 `"User[]"` | `{ "page", "count", "User": { ... } }` | 查询数组。元素是 `{ "User": { ...列 } }`。POST 上同形对象是插入树，见 [写入](./write.md#nest) |
+| `"Todo[]"` | `[ { ... }, { ... } ]` | 批量 POST / PUT / DELETE。元素里可以再写子表数组 |
 
 条件、`@column`、`@order` 和 `列名@` 写在表对象内部，不写在根上。同一张表上的条件是 AND。关联按引用再查，每次都是单表 SQL。
 
@@ -73,7 +73,7 @@ curl -s -X POST http://127.0.0.1:8080/get \
 | --- | --- |
 | [运算符](./operators.md) | 比较、`IN`、区间、`LIKE`、`null`、`@column`、`@order`、`key@` |
 | [查询](./query.md) | GET / HEAD、对象与数组、分页、响应形状 |
-| [写入](./write.md) | POST / PUT / DELETE、主键、批量、`count` |
+| [写入](./write.md) | POST / PUT / DELETE、主键、批量、嵌套插入、`count` |
 | [嵌套示例](./example.md) | 一次取出用户和关联行 |
 | [限制](./limits.md) | `page` / `count` 软限制，以及没有硬性深度上限 |
 | [协议差异](./differences.md) | 相对形似 JSON 嵌套协议时，本引擎的约定 |
