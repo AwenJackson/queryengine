@@ -30,4 +30,4 @@ NestQL 是嵌套 JSON。库方法是 `get` / `head` / `post` / `put` / `delete`�
 
 库方法的成功响应没有 `code`。HTTP 在同一层加上 `code` 和 `message`。没有查询深度硬上限。`page` / `count` 只做软夹紧。
 
-和形似协议的差别、完整运算符表见仓库 `docs/protocol.md`。
+NestQL 的完整运算符表见仓库 `docs/protocol.md`。
