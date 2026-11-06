@@ -11,8 +11,26 @@ export default defineConfig({
     siteTitle: 'QueryEngine',
     nav: [
       { text: '开始', link: '/guide/quick-start' },
-      { text: 'NestQL', link: '/nestql/' },
-      { text: 'HTTP', link: '/http/graphql' },
+      {
+        text: 'NestQL',
+        items: [
+          { text: '概览', link: '/nestql/' },
+          { text: '运算符', link: '/nestql/operators' },
+          { text: '查询', link: '/nestql/query' },
+          { text: '写入', link: '/nestql/write' },
+          { text: '嵌套示例', link: '/nestql/example' },
+          { text: '限制', link: '/nestql/limits' },
+          { text: '协议差异', link: '/nestql/differences' }
+        ]
+      },
+      {
+        text: 'HTTP',
+        items: [
+          { text: 'GraphQL', link: '/http/graphql' },
+          { text: 'RESTful', link: '/http/rest' },
+          { text: '错误码', link: '/http/errors' }
+        ]
+      },
       {
         text: '0.1.0',
         items: [
@@ -34,8 +52,13 @@ export default defineConfig({
       {
         text: 'NestQL',
         items: [
-          { text: '协议', link: '/nestql/' },
-          { text: '嵌套示例', link: '/nestql/example' }
+          { text: '概览', link: '/nestql/' },
+          { text: '运算符', link: '/nestql/operators' },
+          { text: '查询', link: '/nestql/query' },
+          { text: '写入', link: '/nestql/write' },
+          { text: '嵌套示例', link: '/nestql/example' },
+          { text: '限制', link: '/nestql/limits' },
+          { text: '协议差异', link: '/nestql/differences' }
         ]
       },
       {
